@@ -5,7 +5,9 @@ import com.hoperefund.income.dto.IncomeResponseDTO;
 import com.hoperefund.income.service.IncomeService;
 import com.hoperefund.prediction.client.CalcClient;
 import com.hoperefund.prediction.dto.CalculationResponseDTO;
+import com.hoperefund.prediction.dto.BenefitResponseDTO;
 import com.hoperefund.prediction.dto.CardSpendDTO;
+import com.hoperefund.prediction.dto.MemberQualificationDTO;
 import com.hoperefund.prediction.mapper.PredictionMapper;
 import java.util.List;
 import org.slf4j.Logger;
@@ -20,11 +22,15 @@ import org.springframework.stereotype.Service;
  * 계산 서버 호출은 트랜잭션 밖에서 해요. 저장할 때만 PredictionSaveService가 트랜잭션을 열어요.
  * 저장은 hope.prediction.save-enabled가 true이고 hope.calc.mode가 http일 때만 해요.
  * mock(가짜 계산)일 때는 저장을 켜 두어도 저장하지 않아요 → 가짜 결과(세액 0)가 공용 DB에 쌓이지 않게.
+ *
+ * 중소기업 취업자 감면은 회원이 「신청(Y)」했고, 혜택 진단(F-03-02)이 「해당」일 때만 계산에 넣어요.
+ * 진단이 「비해당」이거나 「정보 부족(입사일·회사 규모 없음)」이면 감면 없이(N) 계산해요 (기능명세서 F-03-02 ④).
  */
 @Service
 public class CalculationService{
 
     private static final Logger log = LoggerFactory.getLogger(CalculationService.class);
+    private static final String SME_BENEFIT_CODE = "SME_YOUTH";
 
     private final IncomeService incomeService;
     private final CalcClient calcClient;
@@ -57,6 +63,11 @@ public class CalculationService{
         }
         List<CardSpendDTO> cardSpends = predictionMapper.findCardSpends(memberId, taxYear);
 
+        // 감면 신청(Y)이어도 진단이 「해당」이 아니면 감면 없이 계산 · 저장되는 입력값(PREDICTION_INPUT)도 실제로 쓴 값(N)
+        if("Y".equals(income.getSmeReductionYn()) && !isSmeEligible(memberId, taxYear, income.getTotalSalary())){
+            income.setSmeReductionYn("N");
+        }
+
         // 2. 계산은 CalcClient에 맡겨요 (mock 또는 파이썬 서버) · 트랜잭션 밖
         CalculationResponseDTO result = calcClient.calculate(taxYear, income, homelessHeadYn, cardSpends);
 
@@ -66,5 +77,16 @@ public class CalculationService{
             result.setPredictionId(predictionId);
         }
         return result;
+    }
+
+    /** 중소기업 취업자 감면 진단 결과가 「해당(true)」인지. 비해당(false) · 정보 부족(null) · 회원 정보 없음은 모두 false. */
+    private boolean isSmeEligible(long memberId, int taxYear, long totalSalary){
+        MemberQualificationDTO member = predictionMapper.findMemberQualification(memberId);
+        if(member == null){
+            return false;
+        }
+        BenefitResponseDTO diagnosis = calcClient.diagnose(taxYear, totalSalary, member);
+        return diagnosis.getResults().stream()
+                .anyMatch(r -> SME_BENEFIT_CODE.equals(r.getBenefitCode()) && Boolean.TRUE.equals(r.getEligible()));
     }
 }
