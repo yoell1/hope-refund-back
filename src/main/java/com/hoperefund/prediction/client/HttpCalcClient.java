@@ -7,6 +7,7 @@ import com.hoperefund.prediction.dto.BenefitResponseDTO;
 import com.hoperefund.prediction.dto.CalculationResponseDTO;
 import com.hoperefund.prediction.dto.CardSpendDTO;
 import com.hoperefund.prediction.dto.MemberQualificationDTO;
+import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,8 +35,14 @@ public class HttpCalcClient implements CalcClient{
 
     public HttpCalcClient(@Value("${hope.calc.url}") String baseUrl,
                           @Value("${hope.calc.token:}") String token){
-        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory();
-        factory.setReadTimeout(Duration.ofSeconds(10));  // 계산 서버가 멈춰도 요청이 무한정 기다리지 않게
+        // 연결 3초 · 응답 10초 제한: 계산 서버 주소가 틀리거나 멈춰도 요청이 무한정 기다리지 않게
+        // HTTP/1.1 고정: 계산 서버(uvicorn)가 HTTP/2 전환 요청을 거절해 남기던 경고(Unsupported upgrade request) 없애기
+        HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(3))
+                .version(HttpClient.Version.HTTP_1_1)
+                .build();
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
+        factory.setReadTimeout(Duration.ofSeconds(10));
         RestClient.Builder builder = RestClient.builder().baseUrl(baseUrl).requestFactory(factory);
         if(!token.isBlank()){
             builder.defaultHeader("X-Calc-Token", token);

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 계산 요청 API (F-03-01) · 지금은 가짜 결과(MockCalcClient)를 돌려줘요
+ * 계산 요청 API (F-03-01) · 계산은 CALC_MODE에 따라 파이썬 계산 서버(http) 또는 가짜 계산(mock)이 해요
  * @RestController = @Controller + @ResponseBody → 화면 이름 대신 객체를 JSON으로 바꿔 응답해요
  *
  * TODO(로그인 연결 후): 회원번호를 X-Member-Id 헤더 대신 로그인 정보(세션)에서 꺼내기
