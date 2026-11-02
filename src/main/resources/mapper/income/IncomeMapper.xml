@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hoperefund.income.mapper.IncomeMapper">
 
-    <select id="findByMemberAndYear" resultType="com.hoperefund.income.dto.IncomeResponse">
+    <select id="findByMemberAndYear" resultType="com.hoperefund.income.dto.IncomeResponseDTO">
         SELECT INCOME_ID, TAX_YEAR, TOTAL_SALARY, WITHHELD_TAX, NATIONAL_PENSION, HEALTH_INSURANCE,
                DEPENDENTS, CHILDREN, MONTHLY_RENT, HOUSING_SAVING, PENSION_SAVING, IRP_SAVING,
                SME_REDUCTION_YN, UPDATED_AT

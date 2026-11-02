@@ -9,6 +9,11 @@
 - 검증 결과: (실행한 명령과 결과)
 -->
 
+### [2026-11-02] DTO 이름 규칙 · 계산 폴더 위치 · NO_CRITERIA 오류 (이우진 · feature/rename-dto)
+- 작업 내용: `IncomeRequest` → `IncomeRequestDTO` · `IncomeResponse` → `IncomeResponseDTO` · `CalculationResultDTO` → `CalculationResponseDTO` · 계산 코드를 `calculation/`에서 `prediction/`으로 옮김 (AGENTS.md 폴더 구조 기준) · 기준값 없는 연도 오류의 error 값을 `NO_CRITERIA`로 · 중괄호 모양을 교안 방식(`){`)으로 통일 · AGENTS.md에 DTO 이름 규칙 추가
+- 변경 사유: 교안의 DTO 이름 방식 + 받는 값/돌려주는 값 분리(요청으로 번호·작성일을 못 바꾸게) · 「동석님 전달」 오류 모양과 맞추기
+- 검증 결과: IncomeServiceTest 4개 · CalculationServiceTest 4개 · JSON 칸 이름은 그대로라 화면 쪽 변경 없음
+
 ### [2026-11-02] 계산 요청 API · 가짜 결과 · 오류 응답 보안 (이우진 · feature/calculation)
 - 작업 내용: `POST /api/calculations/{taxYear}` · 저장된 본인 소득을 읽어 계산 창구(CalcClient)에 넘김 · 지금은 MockCalcClient가 「동석님 전달」 모양의 가짜 결과를 돌려줌 (세액·공제액 0 · 대상 금액만 입력값)
 - 보안: 오류 응답에 스택 트레이스가 그대로 나가던 문제 수정 (DB 주소 노출) → application.yml `server.error.include-stacktrace: never` · GlobalExceptionHandler에 형식 오류(400)·없는 주소(404)·방식 오류(405)·그 밖의 오류(500, 원인은 로그에만) 추가

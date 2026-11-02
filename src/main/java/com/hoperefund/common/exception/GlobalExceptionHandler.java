@@ -30,6 +30,12 @@ public class GlobalExceptionHandler{
         return ResponseEntity.badRequest().body(new ErrorResponse("BAD_REQUEST", e.getMessage()));
     }
 
+    /** 기준값이 없는 연도 (예: 2024): error 값을 "NO_CRITERIA"로 따로 보내요 (BadRequestException보다 먼저 잡혀요) */
+    @ExceptionHandler(NoCriteriaException.class)
+    public ResponseEntity<ErrorResponse> noCriteria(NoCriteriaException e){
+        return ResponseEntity.badRequest().body(new ErrorResponse("NO_CRITERIA", e.getMessage()));
+    }
+
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponse> notFound(NotFoundException e){
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("NOT_FOUND", e.getMessage()));

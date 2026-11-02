@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Pattern;
  * 소득 입력 요청 (화면 S-02 → INCOME).
  * 금액은 원 단위 정수, 모두 0 이상 (DB CHECK CK_INCOME_AMOUNT와 같은 규칙).
  */
-public class IncomeRequest {
+public class IncomeRequestDTO{
 
     @NotNull(message = "총급여를 입력해 주세요")
     @Min(value = 0, message = "총급여는 0원 이상이어야 해요")
