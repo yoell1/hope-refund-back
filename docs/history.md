@@ -9,6 +9,12 @@
 - 검증 결과: (실행한 명령과 결과)
 -->
 
+### [2026-11-02] 코드 검토 반영: 트랜잭션 분리 · 연결 타임아웃 · mock 저장 막기 (이우진 · feature/review-fix)
+- **작업 내용**: 저장을 `PredictionSaveService`(@Transactional)로 분리해 계산 서버 호출을 트랜잭션 밖으로 · `HttpCalcClient` 연결 3초 제한 + HTTP/1.1 고정 · `CALC_MODE`가 http가 아니면 `SAVE_ENABLED=true`여도 저장 안 함(경고 로그) · `CalculationController` 틀린 주석 수정
+- **변경 사유**: 계산 서버가 느릴 때 DB 연결을 붙잡지 않게 · 계산 서버 주소가 틀려도 오래 기다리지 않게 · uvicorn 「Unsupported upgrade request」 경고 · 설정 실수로 가짜 결과(세액 0)가 공용 DB에 쌓이는 것 방지
+- **검증 결과**: 미검증 (작업 환경에서 Maven 저장소 접근 불가 → `mvnw clean test`는 로컬에서 실행 필요) · 테스트 1개 추가(가짜 계산 모드에서는 저장 안 함)
+- **미검증**: 실제 계산 서버 연결 상태에서 경고가 사라지는지
+
 ### [2026-11-02] 파이썬 계산 서버 연결 · 카드 합계 · 혜택 진단 API · Spotless (이우진 · feature/calc-connect)
 - 작업 내용: `HttpCalcClient`(POST /calculate · /benefit · X-Calc-Token · 10초 제한 · 연결 실패 503 CALC_UNAVAILABLE) · `hope.calc.mode`로 mock/http 선택 · 계산 때 무주택 여부와 귀속 연도 카드 합계(EXPENSE 분류+결제수단별)를 같이 넘김 · `GET /api/benefits/{taxYear}`(F-12 · MEMBER 자격 정보 → 계산 서버 진단) · 설정은 .env(CALC_MODE · CALC_URL · CALC_API_TOKEN · SAVE_ENABLED) · Spotless(안 쓰는 import 제거 · 줄 끝 공백 · 마지막 줄바꿈만 · 중괄호 모양은 그대로) · 중복 설정 `application.yaml` 삭제
 - 변경 사유: TT-10 [BE] 세액 계산·진단 연결
