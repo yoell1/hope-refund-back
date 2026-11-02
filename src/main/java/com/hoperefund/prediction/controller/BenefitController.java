@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 청년 혜택 자격 진단 API (F-12 · S-05)
- * TODO(로그인 연결 후): 회원번호를 X-Member-Id 헤더 대신 로그인 정보(세션)에서 꺼내기
+ * 청년 혜택 자격 진단 API (F-03-02 · 분담표 F-12 · S-05)
+ * TODO(로그인 연결 후): 회원번호를 X-Member-Id 헤더 대신 로그인 정보(Spring Security)에서 꺼내기
  */
 @RestController
 @RequestMapping("/api/benefits")

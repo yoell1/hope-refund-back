@@ -12,9 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class IncomeService{
 
-    /** 기준값이 있는 귀속 연도 (DB 기준값 2025 · 2026). 기준값이 늘면 여기도 늘려요. */
-    static final int MIN_TAX_YEAR = 2025;
-    static final int MAX_TAX_YEAR = 2026;
+    /** 연도 값 자체가 말이 되는지만 먼저 걸러요 (DB에 엉뚱한 값을 묻지 않게). 실제 계산 가능 여부는 DB 기준값으로 봐요. */
+    static final int MIN_TAX_YEAR = 2000;
+    static final int MAX_TAX_YEAR = 2100;
 
     private final IncomeMapper incomeMapper;
 
@@ -42,8 +42,9 @@ public class IncomeService{
         return incomeMapper.findByMemberAndYear(memberId, taxYear);
     }
 
+    /** 기준값(DEDUCTION_TYPE)이 있는 연도만 받아요 → 새 연도 기준값을 넣으면 코드 수정 없이 바로 열려요. */
     private void checkTaxYear(int taxYear){
-        if (taxYear < MIN_TAX_YEAR || taxYear > MAX_TAX_YEAR){
+        if (taxYear < MIN_TAX_YEAR || taxYear > MAX_TAX_YEAR || incomeMapper.countCriteria(taxYear) == 0){
             throw new NoCriteriaException();
         }
     }

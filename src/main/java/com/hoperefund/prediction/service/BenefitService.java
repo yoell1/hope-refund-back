@@ -10,7 +10,7 @@ import com.hoperefund.prediction.mapper.PredictionMapper;
 import org.springframework.stereotype.Service;
 
 /**
- * 청년 혜택 자격 진단 (F-12 · S-05)
+ * 청년 혜택 자격 진단 (F-03-02 · 분담표 F-12 · S-05)
  * 흐름: 본인 소득(총급여) + 본인 회원 자격 정보 → 계산 서버 /benefit → 혜택별 해당/비해당 + 이유 + 근거
  * 판정 조건은 DB BENEFIT_CONDITION에 있고, 판정은 계산 서버가 해요.
  */

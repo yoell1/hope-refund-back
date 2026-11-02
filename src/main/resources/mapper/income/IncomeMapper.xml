@@ -38,4 +38,11 @@
               #{req.pensionSaving}, #{req.irpSaving}, #{req.smeReductionYn})
     </update>
 
+    <!-- 기준값이 있는 연도인지 (관리자가 새 연도 기준값을 넣으면 코드 수정 없이 바로 쓸 수 있어요) -->
+    <select id="countCriteria" resultType="int">
+        SELECT COUNT(*)
+          FROM DEDUCTION_TYPE
+         WHERE TAX_YEAR = #{taxYear}
+    </select>
+
 </mapper>
