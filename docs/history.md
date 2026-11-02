@@ -9,6 +9,12 @@
 - 검증 결과: (실행한 명령과 결과)
 -->
 
+### [2026-11-02] 중소기업 감면은 진단 「해당」일 때만 · 계산 연도는 DB 기준값으로 (이우진 · feature/sme-check)
+- **작업 내용**: 소득 입력의 감면 신청이 Y여도 혜택 진단(F-03-02) SME_YOUTH가 「해당」이 아니면(비해당 · 정보 부족) 감면 없이 계산하고 입력값도 N으로 저장 · 계산 가능 연도를 코드 상수(2025~2026) 대신 DEDUCTION_TYPE 행 유무로 확인(`IncomeMapper.countCriteria`) · TODO 주석 「세션」 → 「Spring Security」 · 혜택 진단 주석에 명세서 번호(F-03-02) 같이 적음
+- **변경 사유**: 자격 없는 회원이 감면 Y를 고르면 90% 감면이 그대로 들어가 환급액이 부풀던 문제(기능명세서 F-03-02 ④) · 새 연도 기준값을 넣어도 back이 먼저 막던 문제
+- **검증 결과**: 미검증 (작업 환경에서 Maven 저장소 접근 불가 → 로컬 `mvnw clean test` 필요) · 테스트 3개 추가(해당 → Y · 비해당 → N · 정보 부족 → N)
+- **미검증**: 실제 계산 서버로 감면 Y 회원 계산
+
 ### [2026-11-02] 코드 검토 반영: 트랜잭션 분리 · 연결 타임아웃 · mock 저장 막기 (이우진 · feature/review-fix)
 - **작업 내용**: 저장을 `PredictionSaveService`(@Transactional)로 분리해 계산 서버 호출을 트랜잭션 밖으로 · `HttpCalcClient` 연결 3초 제한 + HTTP/1.1 고정 · `CALC_MODE`가 http가 아니면 `SAVE_ENABLED=true`여도 저장 안 함(경고 로그) · `CalculationController` 틀린 주석 수정
 - **변경 사유**: 계산 서버가 느릴 때 DB 연결을 붙잡지 않게 · 계산 서버 주소가 틀려도 오래 기다리지 않게 · uvicorn 「Unsupported upgrade request」 경고 · 설정 실수로 가짜 결과(세액 0)가 공용 DB에 쌓이는 것 방지

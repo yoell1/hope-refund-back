@@ -3,7 +3,7 @@ package com.hoperefund.prediction.dto;
 import java.util.ArrayList;
 import java.util.List;
 
-/** 청년 혜택 자격 진단 응답 (F-12 · S-05) */
+/** 청년 혜택 자격 진단 응답 (F-03-02 · 분담표 F-12 · S-05) */
 public class BenefitResponseDTO{
 
     private Integer taxYear;

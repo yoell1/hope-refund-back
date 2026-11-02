@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 소득 입력 (S-02 · F-02-01).
- * TODO(로그인 연결 후): 회원번호를 X-Member-Id 헤더 대신 로그인 정보에서 꺼내기 (회원 관리 담당과 맞추기)
+ * TODO(로그인 연결 후): 회원번호를 X-Member-Id 헤더 대신 로그인 정보(Spring Security)에서 꺼내기 (회원 관리 담당과 맞추기)
  */
 @RestController
 @RequestMapping("/api/incomes")
