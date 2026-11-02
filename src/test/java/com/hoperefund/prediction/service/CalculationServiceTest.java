@@ -12,6 +12,8 @@ import com.hoperefund.income.mapper.IncomeMapper;
 import com.hoperefund.income.service.IncomeService;
 import com.hoperefund.prediction.client.MockCalcClient;
 import com.hoperefund.prediction.dto.CalculationResponseDTO;
+import com.hoperefund.prediction.dto.CardSpendDTO;
+import com.hoperefund.prediction.dto.MemberQualificationDTO;
 import com.hoperefund.prediction.mapper.PredictionMapper;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,6 +54,18 @@ class CalculationServiceTest{
         @Override
         public String findHomelessHeadYn(long memberId){
             return homeless.get(memberId);
+        }
+
+        MemberQualificationDTO qualification;  // 혜택 진단 테스트용
+
+        @Override
+        public MemberQualificationDTO findMemberQualification(long memberId){
+            return qualification;
+        }
+
+        @Override
+        public List<CardSpendDTO> findCardSpends(long memberId, int taxYear){
+            return List.of(new CardSpendDTO(1L, "CREDIT", 12_000_000L));
         }
 
         @Override
@@ -113,6 +127,7 @@ class CalculationServiceTest{
     void 소득이_있으면_기납부세액이_결과에_들어간다(){
         // Given
         saveIncome(1L, 2026);
+        predictionMapper.homeless.put(1L, "N");
         // When
         CalculationResponseDTO result = service(false).calculate(1L, 2026);
         // Then
@@ -123,6 +138,7 @@ class CalculationServiceTest{
     void 카드_공제는_6개_행으로_나온다(){
         // Given
         saveIncome(1L, 2026);
+        predictionMapper.homeless.put(1L, "N");
         // When
         CalculationResponseDTO result = service(false).calculate(1L, 2026);
         // Then
@@ -144,9 +160,18 @@ class CalculationServiceTest{
     }
 
     @Test
+    void 회원_정보가_없으면_계산하지_않는다(){
+        // Given: 소득은 있는데 회원 정보(무주택 여부)가 없음
+        saveIncome(1L, 2026);
+        // When · Then
+        assertThrows(NotFoundException.class, () -> service(false).calculate(1L, 2026));
+    }
+
+    @Test
     void 저장이_꺼져_있으면_DB에_저장하지_않는다(){
         // Given
         saveIncome(1L, 2026);
+        predictionMapper.homeless.put(1L, "N");
         // When
         CalculationResponseDTO result = service(false).calculate(1L, 2026);
         // Then
@@ -177,14 +202,6 @@ class CalculationServiceTest{
         service(true).calculate(1L, 2026);
         // Then
         assertEquals("Y", predictionMapper.savedHomelessYn);
-    }
-
-    @Test
-    void 회원_정보가_없으면_저장하지_않는다(){
-        // Given: 소득은 있는데 회원 정보가 없음
-        saveIncome(1L, 2026);
-        // When · Then
-        assertThrows(NotFoundException.class, () -> service(true).calculate(1L, 2026));
     }
 
     @Test
