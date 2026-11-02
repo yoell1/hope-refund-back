@@ -1,8 +1,8 @@
-package com.hoperefund.calculation.client;
+package com.hoperefund.prediction.client;
 
-import com.hoperefund.calculation.dto.CalculationResultDTO;
-import com.hoperefund.calculation.dto.DeductionDetailDTO;
-import com.hoperefund.income.dto.IncomeResponse;
+import com.hoperefund.prediction.dto.CalculationResponseDTO;
+import com.hoperefund.prediction.dto.DeductionDetailDTO;
+import com.hoperefund.income.dto.IncomeResponseDTO;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
@@ -20,8 +20,8 @@ public class MockCalcClient implements CalcClient{
     private static final String CARD_SOURCE = "국세청 신고안내 132p";
 
     @Override
-    public CalculationResultDTO calculate(int taxYear, IncomeResponse income){
-        CalculationResultDTO result = new CalculationResultDTO();
+    public CalculationResponseDTO calculate(int taxYear, IncomeResponseDTO income){
+        CalculationResponseDTO result = new CalculationResponseDTO();
         result.setTaxYear(taxYear);
         result.setTotalSalary(income.getTotalSalary());
         result.setWithheldTax(income.getWithheldTax());

@@ -1,4 +1,4 @@
-package com.hoperefund.calculation.dto;
+package com.hoperefund.prediction.dto;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,7 +8,7 @@ import java.util.List;
  * - 칸 이름은 노션 「동석님 전달」 이름 그대로예요.
  * - expectedRefund가 음수면 추가 납부예요.
  */
-public class CalculationResultDTO{
+public class CalculationResponseDTO{
 
     private Integer taxYear;        // 귀속 연도
     private Long totalSalary;       // 총급여

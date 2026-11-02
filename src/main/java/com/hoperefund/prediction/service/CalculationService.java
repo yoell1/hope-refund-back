@@ -1,8 +1,8 @@
-package com.hoperefund.calculation.service;
+package com.hoperefund.prediction.service;
 
-import com.hoperefund.calculation.client.CalcClient;
-import com.hoperefund.calculation.dto.CalculationResultDTO;
-import com.hoperefund.income.dto.IncomeResponse;
+import com.hoperefund.prediction.client.CalcClient;
+import com.hoperefund.prediction.dto.CalculationResponseDTO;
+import com.hoperefund.income.dto.IncomeResponseDTO;
 import com.hoperefund.income.service.IncomeService;
 import org.springframework.stereotype.Service;
 
@@ -23,10 +23,10 @@ public class CalculationService{
         this.calcClient = calcClient;
     }
 
-    public CalculationResultDTO calculate(long memberId, int taxYear){
+    public CalculationResponseDTO calculate(long memberId, int taxYear){
         // 1. 본인(memberId) 소득만 읽어요 (SQL에 MEMBER_ID 조건 → 다른 회원 소득은 못 읽음)
         //    연도 검사 · 소득이 없을 때 오류도 IncomeService 규칙을 그대로 따라요
-        IncomeResponse income = incomeService.get(memberId, taxYear);
+        IncomeResponseDTO income = incomeService.get(memberId, taxYear);
 
         // 2. 계산은 CalcClient에 맡겨요 (지금은 가짜 결과)
         return calcClient.calculate(taxYear, income);
