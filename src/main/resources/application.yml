@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: hope-refund-back
+  config:
+    # DB 접속 정보는 프로젝트 루트의 .env 파일에서 읽어요 (.env는 커밋하지 않음 · 이름은 .env.example 참고)
+    import: optional:file:.env[.properties]
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: oracle.jdbc.OracleDriver
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true   # TOTAL_SALARY → totalSalary
+    jdbc-type-for-null: 'NULL'           # Oracle에 null을 넘길 때 오류 막기
+
+server:
+  port: 8080
