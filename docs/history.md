@@ -9,6 +9,11 @@
 - 검증 결과: (실행한 명령과 결과)
 -->
 
+### [2026-11-02] 계산 결과 저장 (이우진 · feature/prediction-save)
+- 작업 내용: 계산 요청 때 PREDICTION · PREDICTION_INPUT · PREDICTION_DETAIL을 한 트랜잭션으로 저장 · 무주택 세대주는 MEMBER에서 읽어 PREDICTION_INPUT에 복사 · 상세의 TYPE_ID는 연도 + 코드 + 총급여 구간으로 찾음 (0개·여러 개면 저장 중단) · 응답에 `predictionId` 추가 · 저장은 설정 `hope.prediction.save-enabled`가 true일 때만 (지금 false)
+- 변경 사유: TT-10 [BE] 3단계 · 지난 결과 다시 열기 · 파이썬 서버 연결 전 가짜 결과가 공용 DB에 쌓이지 않게 저장은 꺼 둠
+- 검증 결과: CalculationServiceTest 9개 (DB 없이 가짜 매퍼) · 실제 DB 저장은 미검증 (파이썬 서버 연결 후 save-enabled: true로 확인 예정)
+
 ### [2026-11-02] DTO 이름 규칙 · 계산 폴더 위치 · NO_CRITERIA 오류 (이우진 · feature/rename-dto)
 - 작업 내용: `IncomeRequest` → `IncomeRequestDTO` · `IncomeResponse` → `IncomeResponseDTO` · `CalculationResultDTO` → `CalculationResponseDTO` · 계산 코드를 `calculation/`에서 `prediction/`으로 옮김 (AGENTS.md 폴더 구조 기준) · 기준값 없는 연도 오류의 error 값을 `NO_CRITERIA`로 · 중괄호 모양을 교안 방식(`){`)으로 통일 · AGENTS.md에 DTO 이름 규칙 추가
 - 변경 사유: 교안의 DTO 이름 방식 + 받는 값/돌려주는 값 분리(요청으로 번호·작성일을 못 바꾸게) · 「동석님 전달」 오류 모양과 맞추기

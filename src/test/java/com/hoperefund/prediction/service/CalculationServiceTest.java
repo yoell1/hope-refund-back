@@ -1,22 +1,28 @@
 package com.hoperefund.prediction.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.hoperefund.prediction.client.MockCalcClient;
-import com.hoperefund.prediction.dto.CalculationResponseDTO;
 import com.hoperefund.common.exception.NoCriteriaException;
 import com.hoperefund.common.exception.NotFoundException;
 import com.hoperefund.income.dto.IncomeRequestDTO;
 import com.hoperefund.income.dto.IncomeResponseDTO;
 import com.hoperefund.income.mapper.IncomeMapper;
 import com.hoperefund.income.service.IncomeService;
+import com.hoperefund.prediction.client.MockCalcClient;
+import com.hoperefund.prediction.dto.CalculationResponseDTO;
+import com.hoperefund.prediction.mapper.PredictionMapper;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** DB 없이 계산 요청 흐름만 확인해요 (가짜 매퍼 + 가짜 계산). */
+/** DB 없이 계산 요청 · 저장 흐름만 확인해요 (가짜 매퍼 + 가짜 계산). */
 class CalculationServiceTest{
 
     /** 메모리에만 저장하는 가짜 IncomeMapper (회원번호-연도로 찾아요) */
@@ -34,13 +40,61 @@ class CalculationServiceTest{
         }
     }
 
-    private FakeIncomeMapper mapper;
-    private CalculationService service;
+    /** 저장한 내용을 기록만 하는 가짜 PredictionMapper */
+    static class FakePredictionMapper implements PredictionMapper{
+        final Map<Long, String> homeless = new HashMap<>();
+        final Set<String> missingCodes = new HashSet<>();
+        int predictionCount = 0;
+        int inputCount = 0;
+        String savedHomelessYn;
+        final List<Long> detailTypeIds = new ArrayList<>();
+
+        @Override
+        public String findHomelessHeadYn(long memberId){
+            return homeless.get(memberId);
+        }
+
+        @Override
+        public List<Long> findTypeIds(int taxYear, String typeCode, long totalSalary){
+            return missingCodes.contains(typeCode) ? List.of() : List.of((long) typeCode.hashCode());
+        }
+
+        @Override
+        public long nextPredictionId(){
+            return 101L;
+        }
+
+        @Override
+        public int insertPrediction(long predictionId, long memberId, CalculationResponseDTO result){
+            predictionCount++;
+            return 1;
+        }
+
+        @Override
+        public int insertPredictionInput(long predictionId, IncomeResponseDTO income, String homelessHeadYn){
+            inputCount++;
+            savedHomelessYn = homelessHeadYn;
+            return 1;
+        }
+
+        @Override
+        public int insertPredictionDetail(long predictionId, long typeId, long baseAmount, long deductionAmount){
+            detailTypeIds.add(typeId);
+            return 1;
+        }
+    }
+
+    private FakeIncomeMapper incomeMapper;
+    private FakePredictionMapper predictionMapper;
 
     @BeforeEach
     void setUp(){
-        mapper = new FakeIncomeMapper();
-        service = new CalculationService(new IncomeService(mapper), new MockCalcClient());
+        incomeMapper = new FakeIncomeMapper();
+        predictionMapper = new FakePredictionMapper();
+    }
+
+    private CalculationService service(boolean saveEnabled){
+        return new CalculationService(new IncomeService(incomeMapper), new MockCalcClient(), predictionMapper, saveEnabled);
     }
 
     private void saveIncome(long memberId, int taxYear){
@@ -52,7 +106,7 @@ class CalculationServiceTest{
         income.setHealthInsurance(1_276_000L);
         income.setPensionSaving(6_000_000L);
         income.setIrpSaving(3_000_000L);
-        mapper.rows.put(memberId + "-" + taxYear, income);
+        incomeMapper.rows.put(memberId + "-" + taxYear, income);
     }
 
     @Test
@@ -60,7 +114,7 @@ class CalculationServiceTest{
         // Given
         saveIncome(1L, 2026);
         // When
-        CalculationResponseDTO result = service.calculate(1L, 2026);
+        CalculationResponseDTO result = service(false).calculate(1L, 2026);
         // Then
         assertEquals(1_523_000L, result.getWithheldTax().longValue());
     }
@@ -70,7 +124,7 @@ class CalculationServiceTest{
         // Given
         saveIncome(1L, 2026);
         // When
-        CalculationResponseDTO result = service.calculate(1L, 2026);
+        CalculationResponseDTO result = service(false).calculate(1L, 2026);
         // Then
         assertEquals(6, result.getDetails().stream().filter(d -> "CARD".equals(d.getKind())).count());
     }
@@ -80,12 +134,66 @@ class CalculationServiceTest{
         // Given: 1번 회원 소득만 있음
         saveIncome(1L, 2026);
         // When · Then: 2번 회원이 요청하면 1번 소득을 읽지 않고 없음 오류
-        assertThrows(NotFoundException.class, () -> service.calculate(2L, 2026));
+        assertThrows(NotFoundException.class, () -> service(false).calculate(2L, 2026));
     }
 
     @Test
     void 기준값이_없는_연도는_계산하지_않는다(){
         // When · Then
-        assertThrows(NoCriteriaException.class, () -> service.calculate(1L, 2024));
+        assertThrows(NoCriteriaException.class, () -> service(false).calculate(1L, 2024));
+    }
+
+    @Test
+    void 저장이_꺼져_있으면_DB에_저장하지_않는다(){
+        // Given
+        saveIncome(1L, 2026);
+        // When
+        CalculationResponseDTO result = service(false).calculate(1L, 2026);
+        // Then
+        assertNull(result.getPredictionId());
+        assertEquals(0, predictionMapper.predictionCount);
+    }
+
+    @Test
+    void 저장이_켜져_있으면_결과_입력값_상세를_모두_저장한다(){
+        // Given
+        saveIncome(1L, 2026);
+        predictionMapper.homeless.put(1L, "N");
+        // When
+        CalculationResponseDTO result = service(true).calculate(1L, 2026);
+        // Then: 결과 1 · 입력값 1 · 상세는 결과 항목 수만큼 · 결과 번호가 응답에 들어감
+        assertEquals(101L, result.getPredictionId().longValue());
+        assertEquals(1, predictionMapper.predictionCount);
+        assertEquals(1, predictionMapper.inputCount);
+        assertEquals(result.getDetails().size(), predictionMapper.detailTypeIds.size());
+    }
+
+    @Test
+    void 무주택_세대주_여부는_회원_정보에서_복사한다(){
+        // Given
+        saveIncome(1L, 2026);
+        predictionMapper.homeless.put(1L, "Y");
+        // When
+        service(true).calculate(1L, 2026);
+        // Then
+        assertEquals("Y", predictionMapper.savedHomelessYn);
+    }
+
+    @Test
+    void 회원_정보가_없으면_저장하지_않는다(){
+        // Given: 소득은 있는데 회원 정보가 없음
+        saveIncome(1L, 2026);
+        // When · Then
+        assertThrows(NotFoundException.class, () -> service(true).calculate(1L, 2026));
+    }
+
+    @Test
+    void 기준값_항목을_찾지_못하면_저장을_멈춘다(){
+        // Given: 결과에 있는 코드 하나가 DB 기준값에 없음
+        saveIncome(1L, 2026);
+        predictionMapper.homeless.put(1L, "N");
+        predictionMapper.missingCodes.add("CARD_CHECK");
+        // When · Then (실제 DB에서는 @Transactional로 앞에서 넣은 행도 모두 취소돼요)
+        assertThrows(IllegalStateException.class, () -> service(true).calculate(1L, 2026));
     }
 }
