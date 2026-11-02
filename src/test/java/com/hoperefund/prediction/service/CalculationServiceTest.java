@@ -1,14 +1,14 @@
-package com.hoperefund.calculation.service;
+package com.hoperefund.prediction.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.hoperefund.calculation.client.MockCalcClient;
-import com.hoperefund.calculation.dto.CalculationResultDTO;
-import com.hoperefund.common.exception.BadRequestException;
+import com.hoperefund.prediction.client.MockCalcClient;
+import com.hoperefund.prediction.dto.CalculationResponseDTO;
+import com.hoperefund.common.exception.NoCriteriaException;
 import com.hoperefund.common.exception.NotFoundException;
-import com.hoperefund.income.dto.IncomeRequest;
-import com.hoperefund.income.dto.IncomeResponse;
+import com.hoperefund.income.dto.IncomeRequestDTO;
+import com.hoperefund.income.dto.IncomeResponseDTO;
 import com.hoperefund.income.mapper.IncomeMapper;
 import com.hoperefund.income.service.IncomeService;
 import java.util.HashMap;
@@ -21,15 +21,15 @@ class CalculationServiceTest{
 
     /** 메모리에만 저장하는 가짜 IncomeMapper (회원번호-연도로 찾아요) */
     static class FakeIncomeMapper implements IncomeMapper{
-        final Map<String, IncomeResponse> rows = new HashMap<>();
+        final Map<String, IncomeResponseDTO> rows = new HashMap<>();
 
         @Override
-        public IncomeResponse findByMemberAndYear(long memberId, int taxYear){
+        public IncomeResponseDTO findByMemberAndYear(long memberId, int taxYear){
             return rows.get(memberId + "-" + taxYear);
         }
 
         @Override
-        public int upsert(long memberId, int taxYear, IncomeRequest req){
+        public int upsert(long memberId, int taxYear, IncomeRequestDTO req){
             return 0;
         }
     }
@@ -44,7 +44,7 @@ class CalculationServiceTest{
     }
 
     private void saveIncome(long memberId, int taxYear){
-        IncomeResponse income = new IncomeResponse();
+        IncomeResponseDTO income = new IncomeResponseDTO();
         income.setTaxYear(taxYear);
         income.setTotalSalary(36_000_000L);
         income.setWithheldTax(1_523_000L);
@@ -60,7 +60,7 @@ class CalculationServiceTest{
         // Given
         saveIncome(1L, 2026);
         // When
-        CalculationResultDTO result = service.calculate(1L, 2026);
+        CalculationResponseDTO result = service.calculate(1L, 2026);
         // Then
         assertEquals(1_523_000L, result.getWithheldTax().longValue());
     }
@@ -70,7 +70,7 @@ class CalculationServiceTest{
         // Given
         saveIncome(1L, 2026);
         // When
-        CalculationResultDTO result = service.calculate(1L, 2026);
+        CalculationResponseDTO result = service.calculate(1L, 2026);
         // Then
         assertEquals(6, result.getDetails().stream().filter(d -> "CARD".equals(d.getKind())).count());
     }
@@ -86,6 +86,6 @@ class CalculationServiceTest{
     @Test
     void 기준값이_없는_연도는_계산하지_않는다(){
         // When · Then
-        assertThrows(BadRequestException.class, () -> service.calculate(1L, 2024));
+        assertThrows(NoCriteriaException.class, () -> service.calculate(1L, 2024));
     }
 }

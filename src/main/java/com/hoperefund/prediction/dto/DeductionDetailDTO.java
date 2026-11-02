@@ -1,4 +1,4 @@
-package com.hoperefund.calculation.dto;
+package com.hoperefund.prediction.dto;
 
 /**
  * 항목별 공제 내역 1행 (DTO: 계층 사이에 데이터를 실어 나르는 객체)
