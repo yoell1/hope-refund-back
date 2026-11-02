@@ -2,6 +2,8 @@ package com.hoperefund.prediction.mapper;
 
 import com.hoperefund.income.dto.IncomeResponseDTO;
 import com.hoperefund.prediction.dto.CalculationResponseDTO;
+import com.hoperefund.prediction.dto.CardSpendDTO;
+import com.hoperefund.prediction.dto.MemberQualificationDTO;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -16,6 +18,12 @@ public interface PredictionMapper{
 
     /** 회원의 무주택 세대주 여부 (Y/N) · 회원이 없으면 null */
     String findHomelessHeadYn(@Param("memberId") long memberId);
+
+    /** 혜택 진단용 회원 자격 정보 (본인 MEMBER_ID만) · 회원이 없으면 null */
+    MemberQualificationDTO findMemberQualification(@Param("memberId") long memberId);
+
+    /** 본인 카드 내역을 귀속 연도 안에서 분류 + 결제수단별로 더한 값 (EXPENSE 읽기만) */
+    List<CardSpendDTO> findCardSpends(@Param("memberId") long memberId, @Param("taxYear") int taxYear);
 
     /**
      * 공제 항목 번호 찾기: 연도 + 코드 + 총급여 구간

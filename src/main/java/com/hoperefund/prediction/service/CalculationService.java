@@ -5,6 +5,7 @@ import com.hoperefund.income.dto.IncomeResponseDTO;
 import com.hoperefund.income.service.IncomeService;
 import com.hoperefund.prediction.client.CalcClient;
 import com.hoperefund.prediction.dto.CalculationResponseDTO;
+import com.hoperefund.prediction.dto.CardSpendDTO;
 import com.hoperefund.prediction.dto.DeductionDetailDTO;
 import com.hoperefund.prediction.mapper.PredictionMapper;
 import java.util.List;
@@ -14,10 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 계산 요청 (F-03-01)
- * 흐름: Controller → CalculationService → (IncomeService로 소득 조회) → CalcClient(계산) → 결과 저장 → 결과 반환
+ * 흐름: Controller → CalculationService → (소득 · 무주택 · 카드 합계 조회) → CalcClient(계산) → 결과 저장 → 결과 반환
  *
  * 저장은 설정 hope.prediction.save-enabled가 true일 때만 해요.
- * 파이썬 서버 연결 전에는 false → 가짜 결과(세액 0)가 공용 DB에 쌓이지 않게 해요.
+ * 파이썬 서버 연결 전(mock)에는 false → 가짜 결과(세액 0)가 공용 DB에 쌓이지 않게 해요.
  */
 @Service
 public class CalculationService{
@@ -42,30 +43,30 @@ public class CalculationService{
      */
     @Transactional
     public CalculationResponseDTO calculate(long memberId, int taxYear){
-        // 1. 본인(memberId) 소득만 읽어요 · 연도 검사 · 소득 없음 오류는 IncomeService 규칙 그대로
+        // 1. 본인(memberId) 데이터만 읽어요 · 연도 검사 · 소득 없음 오류는 IncomeService 규칙 그대로
         IncomeResponseDTO income = incomeService.get(memberId, taxYear);
+        String homelessHeadYn = predictionMapper.findHomelessHeadYn(memberId);
+        if(homelessHeadYn == null){
+            throw new NotFoundException("회원 정보를 찾을 수 없어요");
+        }
+        List<CardSpendDTO> cardSpends = predictionMapper.findCardSpends(memberId, taxYear);
 
-        // 2. 계산은 CalcClient에 맡겨요
-        CalculationResponseDTO result = calcClient.calculate(taxYear, income);
+        // 2. 계산은 CalcClient에 맡겨요 (mock 또는 파이썬 서버)
+        CalculationResponseDTO result = calcClient.calculate(taxYear, income, homelessHeadYn, cardSpends);
 
         // 3. 저장 (설정이 켜져 있을 때만)
         if(saveEnabled){
-            long predictionId = save(memberId, taxYear, income, result);
+            long predictionId = save(memberId, taxYear, income, homelessHeadYn, result);
             result.setPredictionId(predictionId);
         }
         return result;
     }
 
-    private long save(long memberId, int taxYear, IncomeResponseDTO income, CalculationResponseDTO result){
+    private long save(long memberId, int taxYear, IncomeResponseDTO income, String homelessHeadYn,
+                      CalculationResponseDTO result){
         // 계산 결과의 연도가 요청 연도와 다르면 저장하지 않아요 (기준값 연도 = 계산 연도 규칙)
         if(result.getTaxYear() == null || result.getTaxYear() != taxYear){
             throw new IllegalStateException("계산 결과 연도가 요청 연도와 달라요: " + result.getTaxYear() + " / " + taxYear);
-        }
-
-        // 무주택 세대주 여부는 회원 정보(MEMBER)에서 읽어 입력값 기록에 복사해요
-        String homelessHeadYn = predictionMapper.findHomelessHeadYn(memberId);
-        if(homelessHeadYn == null){
-            throw new NotFoundException("회원 정보를 찾을 수 없어요");
         }
 
         long predictionId = predictionMapper.nextPredictionId();
