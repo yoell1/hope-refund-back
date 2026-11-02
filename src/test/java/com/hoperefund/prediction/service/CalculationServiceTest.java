@@ -107,8 +107,14 @@ class CalculationServiceTest{
         predictionMapper = new FakePredictionMapper();
     }
 
+    /** 저장 흐름을 보려고 mode는 "http"로 줘요 (계산은 가짜 MockCalcClient) */
     private CalculationService service(boolean saveEnabled){
-        return new CalculationService(new IncomeService(incomeMapper), new MockCalcClient(), predictionMapper, saveEnabled);
+        return service(saveEnabled, "http");
+    }
+
+    private CalculationService service(boolean saveEnabled, String calcMode){
+        return new CalculationService(new IncomeService(incomeMapper), new MockCalcClient(),
+                new PredictionSaveService(predictionMapper), predictionMapper, saveEnabled, calcMode);
     }
 
     private void saveIncome(long memberId, int taxYear){
@@ -212,5 +218,17 @@ class CalculationServiceTest{
         predictionMapper.missingCodes.add("CARD_CHECK");
         // When · Then (실제 DB에서는 @Transactional로 앞에서 넣은 행도 모두 취소돼요)
         assertThrows(IllegalStateException.class, () -> service(true).calculate(1L, 2026));
+    }
+
+    @Test
+    void 가짜_계산_모드에서는_저장을_켜도_저장하지_않는다(){
+        // Given
+        saveIncome(1L, 2026);
+        predictionMapper.homeless.put(1L, "N");
+        // When: SAVE_ENABLED=true · CALC_MODE=mock
+        CalculationResponseDTO result = service(true, "mock").calculate(1L, 2026);
+        // Then
+        assertNull(result.getPredictionId());
+        assertEquals(0, predictionMapper.predictionCount);
     }
 }
