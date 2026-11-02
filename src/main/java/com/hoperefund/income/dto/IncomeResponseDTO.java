@@ -3,7 +3,7 @@ package com.hoperefund.income.dto;
 import java.time.LocalDateTime;
 
 /** 소득 조회 응답 (INCOME 1행). MyBatis가 칸 이름을 camelCase로 바꿔 채워요. */
-public class IncomeResponse {
+public class IncomeResponseDTO{
 
     private Long incomeId;
     private Integer taxYear;

@@ -1,7 +1,7 @@
-package com.hoperefund.calculation.client;
+package com.hoperefund.prediction.client;
 
-import com.hoperefund.calculation.dto.CalculationResultDTO;
-import com.hoperefund.income.dto.IncomeResponse;
+import com.hoperefund.prediction.dto.CalculationResponseDTO;
+import com.hoperefund.income.dto.IncomeResponseDTO;
 
 /**
  * 파이썬 서버(세액 계산)에 계산을 맡기는 창구 (인터페이스)
@@ -13,5 +13,5 @@ import com.hoperefund.income.dto.IncomeResponse;
  */
 public interface CalcClient{
 
-    CalculationResultDTO calculate(int taxYear, IncomeResponse income);
+    CalculationResponseDTO calculate(int taxYear, IncomeResponseDTO income);
 }

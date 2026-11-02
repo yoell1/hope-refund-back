@@ -12,7 +12,7 @@
 
 ## 명령어
 
-빌드 도구는 **Maven**(`./mvnw`)만 사용한다. Java 17 · Spring Boot 4.0.9 (MyBatis 스타터가 4.0.x를 요구해서 정함 · 팀원 모두 같은 버전).
+빌드 도구는 **Maven**(`./mvnw`)만 사용한다. Java 17 · Spring Boot 4.1.0 · MyBatis 스타터 4.0.1 (팀 결정 11/02 · 팀원 모두 같은 버전).
 (Windows 명령 프롬프트(cmd)에서는 `./mvnw` 대신 `mvnw`로 쓴다. PowerShell·Git Bash는 `./mvnw` 그대로)
 
 ```bash
@@ -25,7 +25,7 @@
 
 ## 기술 스택
 
-Java 17 · Spring Boot 4.0.9 · Maven · MyBatis · Oracle · Spotless(코드 모양) · JUnit 5(테스트)
+Java 17 · Spring Boot 4.1.0 · Maven · MyBatis 4.0.1 · Oracle 21c XE(교육원 공용 DB 21.3) · Spotless(코드 모양) · JUnit 5(테스트)
 
 ## 폴더 구조
 
@@ -51,6 +51,7 @@ src/main/resources/mapper/   # MyBatis SQL (기능별 폴더)
 - 기준값(`DEDUCTION_TYPE`)은 번호(`TYPE_ID`)가 아니라 `TAX_YEAR` + `TYPE_CODE`(+ 총급여 구간)로 찾는다. 공용 DB와 새 계정의 번호가 다르다.
 - 기본값이 있는 칸은 INSERT에서 빼고 넣는다 (NULL을 넣으면 오류).
 - 금액은 원 단위 정수(`long`)로 다룬다.
+- DTO 이름: 화면에서 받는 값은 `…RequestDTO`, 화면에 돌려주는 값은 `…ResponseDTO`로 짓는다 (예: `IncomeRequestDTO` · `IncomeResponseDTO`). 받는 DTO에는 화면이 넣어야 하는 칸만 둔다 (번호·작성일 같은 칸을 요청으로 바꿀 수 없게).
 - DB 오류 코드는 기능명세서 「7_오류 메시지」 시트의 문구로 바꿔 응답한다.
 - 새 기능에는 `src/test/java`에 같은 패키지로 `*Test.java`를 함께 작성한다.
 
