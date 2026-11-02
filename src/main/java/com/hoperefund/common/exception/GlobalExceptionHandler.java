@@ -36,6 +36,14 @@ public class GlobalExceptionHandler{
         return ResponseEntity.badRequest().body(new ErrorResponse("NO_CRITERIA", e.getMessage()));
     }
 
+    /** 계산 서버에 연결할 수 없을 때: 원인은 로그에만, 화면에는 다시 시도 안내 */
+    @ExceptionHandler(CalcUnavailableException.class)
+    public ResponseEntity<ErrorResponse> calcUnavailable(CalcUnavailableException e){
+        log.error("계산 서버 연결 실패", e);
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ErrorResponse("CALC_UNAVAILABLE", "계산 서버에 잠시 연결할 수 없어요. 잠시 후 다시 시도해 주세요"));
+    }
+
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponse> notFound(NotFoundException e){
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("NOT_FOUND", e.getMessage()));

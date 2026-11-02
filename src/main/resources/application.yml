@@ -25,7 +25,12 @@ server:
     include-exception: false
 
 hope:
+  calc:
+    # mock: 가짜 계산 (파이썬 서버 없이) · http: 파이썬 계산 서버 호출
+    mode: ${CALC_MODE:mock}
+    url: ${CALC_URL:http://localhost:8000}
+    token: ${CALC_API_TOKEN:}
   prediction:
     # 계산 결과를 DB(PREDICTION · PREDICTION_INPUT · PREDICTION_DETAIL)에 저장할지
-    # 파이썬 서버 연결 전에는 false (가짜 결과가 공용 DB에 쌓이지 않게) · 연결 후 true로 바꿔요
-    save-enabled: false
+    # 파이썬 서버 연결 전에는 false (가짜 결과가 공용 DB에 쌓이지 않게) · 연결 후 .env에 SAVE_ENABLED=true
+    save-enabled: ${SAVE_ENABLED:false}

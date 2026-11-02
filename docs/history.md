@@ -9,6 +9,11 @@
 - 검증 결과: (실행한 명령과 결과)
 -->
 
+### [2026-11-02] 파이썬 계산 서버 연결 · 카드 합계 · 혜택 진단 API · Spotless (이우진 · feature/calc-connect)
+- 작업 내용: `HttpCalcClient`(POST /calculate · /benefit · X-Calc-Token · 10초 제한 · 연결 실패 503 CALC_UNAVAILABLE) · `hope.calc.mode`로 mock/http 선택 · 계산 때 무주택 여부와 귀속 연도 카드 합계(EXPENSE 분류+결제수단별)를 같이 넘김 · `GET /api/benefits/{taxYear}`(F-12 · MEMBER 자격 정보 → 계산 서버 진단) · 설정은 .env(CALC_MODE · CALC_URL · CALC_API_TOKEN · SAVE_ENABLED) · Spotless(안 쓰는 import 제거 · 줄 끝 공백 · 마지막 줄바꿈만 · 중괄호 모양은 그대로) · 중복 설정 `application.yaml` 삭제
+- 변경 사유: TT-10 [BE] 세액 계산·진단 연결
+- 검증 결과: CalculationServiceTest 9개 · BenefitServiceTest 3개 (DB 없이 가짜 매퍼) · HttpCalcClient와 실제 DB 저장은 미검증 (계산 서버 실행 후 확인)
+
 ### [2026-11-02] 계산 결과 저장 (이우진 · feature/prediction-save)
 - 작업 내용: 계산 요청 때 PREDICTION · PREDICTION_INPUT · PREDICTION_DETAIL을 한 트랜잭션으로 저장 · 무주택 세대주는 MEMBER에서 읽어 PREDICTION_INPUT에 복사 · 상세의 TYPE_ID는 연도 + 코드 + 총급여 구간으로 찾음 (0개·여러 개면 저장 중단) · 응답에 `predictionId` 추가 · 저장은 설정 `hope.prediction.save-enabled`가 true일 때만 (지금 false)
 - 변경 사유: TT-10 [BE] 3단계 · 지난 결과 다시 열기 · 파이썬 서버 연결 전 가짜 결과가 공용 DB에 쌓이지 않게 저장은 꺼 둠
