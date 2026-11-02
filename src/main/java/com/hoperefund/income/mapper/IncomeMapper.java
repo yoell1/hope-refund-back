@@ -14,4 +14,7 @@ public interface IncomeMapper{
 
     /** 회원 + 귀속 연도 행이 있으면 고치고, 없으면 새로 넣어요 (UQ_INCOME_MEMBER_YEAR). */
     int upsert(@Param("memberId") long memberId, @Param("taxYear") int taxYear, @Param("req") IncomeRequestDTO req);
+
+    /** 그 연도 공제 기준값(DEDUCTION_TYPE) 행 수. 0이면 계산할 수 없는 연도예요. */
+    int countCriteria(@Param("taxYear") int taxYear);
 }

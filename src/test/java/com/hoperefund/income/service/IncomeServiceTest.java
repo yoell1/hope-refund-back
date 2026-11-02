@@ -38,6 +38,12 @@ class IncomeServiceTest{
             rows.put(memberId + "-" + taxYear, r);
             return 1;
         }
+
+        /** 기준값은 2025 · 2026년만 있다고 봐요 (공용 DB와 같게) */
+        @Override
+        public int countCriteria(int taxYear){
+            return taxYear == 2025 || taxYear == 2026 ? 1 : 0;
+        }
     }
 
     private FakeIncomeMapper mapper;

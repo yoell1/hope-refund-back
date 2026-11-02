@@ -10,7 +10,9 @@ import com.hoperefund.income.dto.IncomeRequestDTO;
 import com.hoperefund.income.dto.IncomeResponseDTO;
 import com.hoperefund.income.mapper.IncomeMapper;
 import com.hoperefund.income.service.IncomeService;
+import com.hoperefund.prediction.client.CalcClient;
 import com.hoperefund.prediction.client.MockCalcClient;
+import com.hoperefund.prediction.dto.BenefitResponseDTO;
 import com.hoperefund.prediction.dto.CalculationResponseDTO;
 import com.hoperefund.prediction.dto.CardSpendDTO;
 import com.hoperefund.prediction.dto.MemberQualificationDTO;
@@ -39,6 +41,12 @@ class CalculationServiceTest{
         @Override
         public int upsert(long memberId, int taxYear, IncomeRequestDTO req){
             return 0;
+        }
+
+        /** 기준값은 2025 · 2026년만 있다고 봐요 (공용 DB와 같게) */
+        @Override
+        public int countCriteria(int taxYear){
+            return taxYear == 2025 || taxYear == 2026 ? 1 : 0;
         }
     }
 
@@ -113,8 +121,50 @@ class CalculationServiceTest{
     }
 
     private CalculationService service(boolean saveEnabled, String calcMode){
-        return new CalculationService(new IncomeService(incomeMapper), new MockCalcClient(),
+        return service(new MockCalcClient(), saveEnabled, calcMode);
+    }
+
+    private CalculationService service(CalcClient calcClient, boolean saveEnabled, String calcMode){
+        return new CalculationService(new IncomeService(incomeMapper), calcClient,
                 new PredictionSaveService(predictionMapper), predictionMapper, saveEnabled, calcMode);
+    }
+
+    /** 진단 결과(중소기업 감면)를 정해 두고, 계산에 넘긴 감면 신청 값을 기록하는 가짜 계산 */
+    static class SmeCalcClient extends MockCalcClient{
+        final Boolean smeEligible;
+        String sentSmeReductionYn;
+
+        SmeCalcClient(Boolean smeEligible){
+            this.smeEligible = smeEligible;
+        }
+
+        @Override
+        public CalculationResponseDTO calculate(int taxYear, IncomeResponseDTO income, String homelessHeadYn,
+                                                List<CardSpendDTO> cardSpends){
+            sentSmeReductionYn = income.getSmeReductionYn();
+            return super.calculate(taxYear, income, homelessHeadYn, cardSpends);
+        }
+
+        @Override
+        public BenefitResponseDTO diagnose(int taxYear, long totalSalary, MemberQualificationDTO member){
+            BenefitResponseDTO response = super.diagnose(taxYear, totalSalary, member);
+            response.getResults().forEach(r -> {
+                if("SME_YOUTH".equals(r.getBenefitCode())){
+                    r.setEligible(smeEligible);
+                }
+            });
+            return response;
+        }
+    }
+
+    private SmeCalcClient calculateWithSme(Boolean smeEligible){
+        saveIncome(1L, 2026);
+        incomeMapper.rows.get("1-2026").setSmeReductionYn("Y");
+        predictionMapper.homeless.put(1L, "N");
+        predictionMapper.qualification = new MemberQualificationDTO();
+        SmeCalcClient client = new SmeCalcClient(smeEligible);
+        service(client, false, "http").calculate(1L, 2026);
+        return client;
     }
 
     private void saveIncome(long memberId, int taxYear){
@@ -230,5 +280,20 @@ class CalculationServiceTest{
         // Then
         assertNull(result.getPredictionId());
         assertEquals(0, predictionMapper.predictionCount);
+    }
+
+    @Test
+    void 감면을_신청했고_진단이_해당이면_감면을_넣어_계산한다(){
+        assertEquals("Y", calculateWithSme(true).sentSmeReductionYn);
+    }
+
+    @Test
+    void 감면을_신청해도_진단이_비해당이면_감면_없이_계산한다(){
+        assertEquals("N", calculateWithSme(false).sentSmeReductionYn);
+    }
+
+    @Test
+    void 감면을_신청해도_정보가_부족하면_감면_없이_계산한다(){
+        assertEquals("N", calculateWithSme(null).sentSmeReductionYn);
     }
 }
