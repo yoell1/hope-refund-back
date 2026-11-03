@@ -95,4 +95,39 @@
 		</plugins>
 	</build>
 
+	<!--
+		정적 분석 (보안약점 점검) · 평소 빌드에는 영향 없음 · -Psast를 붙일 때만 실행
+		실행: mvnw.cmd -Psast compile spotbugs:spotbugs   → 리포트 target/spotbugsXml.xml
+		보기: mvnw.cmd -Psast spotbugs:gui
+		SpotBugs는 컴파일된 Java만 봐요 → MyBatis XML(${}) · IDOR · XSS · CSRF 같은 로직 문제는 못 잡아요 (코드 리뷰로 보완)
+	-->
+	<profiles>
+		<profile>
+			<id>sast</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>com.github.spotbugs</groupId>
+						<artifactId>spotbugs-maven-plugin</artifactId>
+						<version>4.9.3.2</version>
+						<configuration>
+							<effort>Max</effort>          <!-- 가장 꼼꼼하게 -->
+							<threshold>Low</threshold>    <!-- 낮은 심각도까지 모두 보기 -->
+							<xmlOutput>true</xmlOutput>
+							<failOnError>false</failOnError>  <!-- 경고가 있어도 빌드는 멈추지 않음 (결과를 보고 판정) -->
+							<plugins>
+								<!-- Find Security Bugs: 보안약점 전용 규칙 (SQL 삽입 · 하드코드 비밀번호 · 약한 암호화 등) -->
+								<plugin>
+									<groupId>com.h3xstream.findsecbugs</groupId>
+									<artifactId>findsecbugs-plugin</artifactId>
+									<version>1.13.0</version>
+								</plugin>
+							</plugins>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
 </project>
