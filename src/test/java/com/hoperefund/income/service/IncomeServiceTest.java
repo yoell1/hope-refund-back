@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.hoperefund.common.exception.BadRequestException;
+import com.hoperefund.common.exception.ConflictException;
 import com.hoperefund.common.exception.NoCriteriaException;
 import com.hoperefund.common.exception.NotFoundException;
 import com.hoperefund.income.dto.IncomeRequestDTO;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DuplicateKeyException;
 
 /** DB 없이 서비스 규칙만 확인해요 (가짜 매퍼 사용). */
 class IncomeServiceTest{
@@ -21,6 +23,7 @@ class IncomeServiceTest{
     static class FakeIncomeMapper implements IncomeMapper{
         final Map<String, IncomeResponseDTO> rows = new HashMap<>();
         int upsertCount = 0;
+        boolean duplicate = false;  // true면 동시 저장 충돌(UQ_INCOME_MEMBER_YEAR 위반)을 흉내 내요
 
         @Override
         public IncomeResponseDTO findByMemberAndYear(long memberId, int taxYear){
@@ -30,6 +33,9 @@ class IncomeServiceTest{
         @Override
         public int upsert(long memberId, int taxYear, IncomeRequestDTO req){
             upsertCount++;
+            if(duplicate){
+                throw new DuplicateKeyException("ORA-00001");
+            }
             IncomeResponseDTO r = new IncomeResponseDTO();
             r.setTaxYear(taxYear);
             r.setTotalSalary(req.getTotalSalary());
@@ -92,6 +98,15 @@ class IncomeServiceTest{
         IncomeRequestDTO req = request(0, 0);
         // When · Then
         assertThrows(NoCriteriaException.class, () -> service.save(1L, 2024, req));
+    }
+
+    @Test
+    void 같은_소득을_동시에_저장해_겹치면_충돌_오류(){
+        // Given
+        mapper.duplicate = true;
+        IncomeRequestDTO req = request(0, 0);
+        // When · Then
+        assertThrows(ConflictException.class, () -> service.save(1L, 2026, req));
     }
 
     @Test

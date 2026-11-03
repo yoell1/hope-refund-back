@@ -55,6 +55,9 @@ public class CalculationService{
     }
 
     public CalculationResponseDTO calculate(long memberId, int taxYear){
+        long started = System.currentTimeMillis();
+        log.info("계산 요청 member={} year={}", memberId, taxYear);  // 금액은 남기지 않아요
+
         // 1. 본인(memberId) 데이터만 읽어요 · 연도 검사 · 소득 없음 오류는 IncomeService 규칙 그대로
         IncomeResponseDTO income = incomeService.get(memberId, taxYear);
         String homelessHeadYn = predictionMapper.findHomelessHeadYn(memberId);
@@ -65,6 +68,7 @@ public class CalculationService{
 
         // 감면 신청(Y)이어도 진단이 「해당」이 아니면 감면 없이 계산 · 저장되는 입력값(PREDICTION_INPUT)도 실제로 쓴 값(N)
         if("Y".equals(income.getSmeReductionYn()) && !isSmeEligible(memberId, taxYear, income.getTotalSalary())){
+            log.info("감면 신청(Y)이지만 진단이 「해당」이 아니라 감면 없이 계산 member={} year={}", memberId, taxYear);
             income.setSmeReductionYn("N");
         }
 
@@ -76,6 +80,8 @@ public class CalculationService{
             long predictionId = predictionSaveService.save(memberId, taxYear, income, homelessHeadYn, result);
             result.setPredictionId(predictionId);
         }
+        log.info("계산 완료 member={} year={} predictionId={} {}ms", memberId, taxYear,
+                result.getPredictionId(), System.currentTimeMillis() - started);
         return result;
     }
 
@@ -86,6 +92,11 @@ public class CalculationService{
             return false;
         }
         BenefitResponseDTO diagnosis = calcClient.diagnose(taxYear, totalSalary, member);
+        if(diagnosis == null || diagnosis.getResults() == null){
+            // 진단 결과가 비면 「해당」으로 볼 근거가 없으니 감면 없이 (안전한 쪽)
+            log.warn("혜택 진단 결과가 비어 있어 감면 없이 계산 member={} year={}", memberId, taxYear);
+            return false;
+        }
         return diagnosis.getResults().stream()
                 .anyMatch(r -> SME_BENEFIT_CODE.equals(r.getBenefitCode()) && Boolean.TRUE.equals(r.getEligible()));
     }

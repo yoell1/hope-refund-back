@@ -21,47 +21,47 @@ public class IncomeRequestDTO{
     @Max(value = 999_999_999_999L, message = "기납부세액이 너무 커요")
     private Long withheldTax;
 
-    @NotNull
+    @NotNull(message = "국민연금보험료를 입력해 주세요")
     @Min(value = 0, message = "국민연금보험료는 0원 이상이어야 해요")
-    @Max(999_999_999_999L)
+    @Max(value = 999_999_999_999L, message = "금액이 너무 커요")
     private Long nationalPension = 0L;
 
-    @NotNull
+    @NotNull(message = "건강·고용보험료를 입력해 주세요")
     @Min(value = 0, message = "건강·고용보험료는 0원 이상이어야 해요")
-    @Max(999_999_999_999L)
+    @Max(value = 999_999_999_999L, message = "금액이 너무 커요")
     private Long healthInsurance = 0L;
 
-    @NotNull
+    @NotNull(message = "부양가족 수를 입력해 주세요")
     @Min(value = 0, message = "부양가족 수는 0명 이상이어야 해요")
     @Max(value = 99, message = "부양가족 수가 너무 커요")
     private Integer dependents = 0;
 
-    @NotNull
+    @NotNull(message = "자녀 수를 입력해 주세요")
     @Min(value = 0, message = "자녀 수는 0명 이상이어야 해요")
     @Max(value = 99, message = "자녀 수가 너무 커요")
     private Integer children = 0;
 
-    @NotNull
+    @NotNull(message = "월세를 입력해 주세요")
     @Min(value = 0, message = "월세는 0원 이상이어야 해요")
-    @Max(9_999_999_999L)
+    @Max(value = 9_999_999_999L, message = "금액이 너무 커요")
     private Long monthlyRent = 0L;
 
-    @NotNull
+    @NotNull(message = "주택청약 납입액을 입력해 주세요")
     @Min(value = 0, message = "주택청약 납입액은 0원 이상이어야 해요")
-    @Max(9_999_999_999L)
+    @Max(value = 9_999_999_999L, message = "금액이 너무 커요")
     private Long housingSaving = 0L;
 
-    @NotNull
+    @NotNull(message = "연금저축 납입액을 입력해 주세요")
     @Min(value = 0, message = "연금저축 납입액은 0원 이상이어야 해요")
-    @Max(9_999_999_999L)
+    @Max(value = 9_999_999_999L, message = "금액이 너무 커요")
     private Long pensionSaving = 0L;
 
-    @NotNull
+    @NotNull(message = "IRP 납입액을 입력해 주세요")
     @Min(value = 0, message = "IRP 납입액은 0원 이상이어야 해요")
-    @Max(9_999_999_999L)
+    @Max(value = 9_999_999_999L, message = "금액이 너무 커요")
     private Long irpSaving = 0L;
 
-    @NotNull
+    @NotNull(message = "중소기업 감면 신청 여부를 입력해 주세요")
     @Pattern(regexp = "[YN]", message = "중소기업 감면 신청 여부는 Y 또는 N이에요")
     private String smeReductionYn = "N";
 
