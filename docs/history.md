@@ -9,6 +9,11 @@
 - 검증 결과: (실행한 명령과 결과)
 -->
 
+### [2026-11-03] 테스트 · 보안 검증 절차 문서 (이우진 · docs/test-verification)
+- **작업 내용**: `docs/setup/05-verification.md` 추가 — JUnit 채점 · SpotBugs 정적 분석 · STS/cmd 폴더 확인 · 제출 전 점검 · 11/03 실행 결과 · 발표용 요약
+- **변경 사유**: 검증할 때마다 같은 순서로 하고, 팀원도 따라 할 수 있게 · 발표 자료에 쓸 근거 정리
+- **검증 결과**: 문서만 추가 (코드 변경 없음)
+
 ### [2026-11-03] 정적 분석 도구 추가: SpotBugs + Find Security Bugs (이우진 · feature/sast)
 - **작업 내용**: `pom.xml`에 `sast` 프로필 추가(spotbugs-maven-plugin 4.9.3.2 · findsecbugs-plugin 1.13.0 · effort Max · threshold Low · 경고가 있어도 빌드 계속) · 평소 빌드에는 영향 없음
 - **변경 사유**: 코드 리뷰로 한 보안 점검을 도구로 한 번 더 확인 (행정안전부 「소프트웨어 개발보안 가이드」 · CWE 매핑)
