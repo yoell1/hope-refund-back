@@ -29,7 +29,8 @@ public class GlobalExceptionHandler{
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ErrorResponse> badRequest(BadRequestException e){
         log.warn("잘못된 요청: {}", e.getMessage());
-        return ResponseEntity.badRequest().body(new ErrorResponse("BAD_REQUEST", e.getMessage()));
+        // 입력값 규칙 위반(예: 자녀 수 > 부양가족 수)도 @Valid 실패와 같은 코드 VALIDATION (API 규칙 docs/api-rules.md)
+        return ResponseEntity.badRequest().body(new ErrorResponse("VALIDATION", e.getMessage()));
     }
 
     /** 기준값이 없는 연도 (예: 2024): error 값을 "NO_CRITERIA"로 따로 보내요 (BadRequestException보다 먼저 잡혀요) */
