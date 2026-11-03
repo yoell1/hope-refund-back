@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
@@ -80,7 +81,8 @@ public class HttpCalcClient implements CalcClient{
         body.put("taxYear", taxYear);
         body.put("totalSalary", totalSalary);
         body.put("birthDate", member.getBirthDate() == null ? null : member.getBirthDate().toString());
-        body.put("militaryMonths", member.getMilitaryMonths() == null ? 0 : member.getMilitaryMonths());
+        // 값이 없으면 0 (포장을 풀었다 다시 싸지 않게 Objects.requireNonNullElse · SpotBugs BX_UNBOXING_IMMEDIATELY_REBOXED)
+        body.put("militaryMonths", Objects.requireNonNullElse(member.getMilitaryMonths(), 0));
         body.put("hireDate", member.getHireDate() == null ? null : member.getHireDate().toString());
         body.put("companySize", member.getCompanySize());
         body.put("homelessHeadYn", member.getHomelessHeadYn());
