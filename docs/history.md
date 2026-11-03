@@ -9,6 +9,18 @@
 - 검증 결과: (실행한 명령과 결과)
 -->
 
+### [2026-11-03] 정적 분석 도구 추가: SpotBugs + Find Security Bugs (이우진 · feature/sast)
+- **작업 내용**: `pom.xml`에 `sast` 프로필 추가(spotbugs-maven-plugin 4.9.3.2 · findsecbugs-plugin 1.13.0 · effort Max · threshold Low · 경고가 있어도 빌드 계속) · 평소 빌드에는 영향 없음
+- **변경 사유**: 코드 리뷰로 한 보안 점검을 도구로 한 번 더 확인 (행정안전부 「소프트웨어 개발보안 가이드」 · CWE 매핑)
+- **실행**: `mvnw.cmd -Psast compile spotbugs:spotbugs` (리포트 target/spotbugsXml.xml) · `mvnw.cmd -Psast spotbugs:gui` (화면으로 보기)
+- **한계**: 컴파일된 Java만 봄 → MyBatis XML(`${}`) · IDOR · XSS · CSRF 같은 로직 문제는 못 잡음 (11/03 코드 리뷰로 보완)
+- **검증 결과**: 학원 PC(JDK 17.0.19)에서 `mvnw clean test` 통과 · SpotBugs 4.9.3 + Find Security Bugs 경고 23건(높음 0 · 보통 10 · 낮음 13) → 앞뒤 코드 확인 후 판정
+  - CRLF_INJECTION_LOGS(CWE-117) 9건: 오탐 — 로그 값이 숫자(회원번호 · 연도) · 고정 문구 · 칸 이름 · 헤더 이름 · 설정값 (BenefitService 혜택 코드 1건은 DB 기준값이라 위험 매우 낮음) · 앞으로 사용자 입력을 찍을 수 있어 제외하지 않음
+  - SPRING_ENDPOINT 4건: 알고 있는 문제 — 4개 API 모두 X-Member-Id 헤더를 믿음(IDOR · CWE-639) → Spring Security 연결 때 해결 · 제외하지 않음
+  - EI_EXPOSE_REP/REP2(CWE-374) 9건: 오탐 — DTO 목록 getter · setter 6건 · 서비스 생성자 의존성 주입 3건 → `spotbugs-exclude.xml`로 좁게 제외
+  - BX_UNBOXING_IMMEDIATELY_REBOXED 1건: 진짜(성능 · 결과 영향 없음) → `HttpCalcClient` 군 복무 개월을 `Objects.requireNonNullElse`로 수정
+- **다음 실행 예상**: 13건 (CRLF 9 · SPRING_ENDPOINT 4 · 모두 판정 기록 있음)
+
 ### [2026-11-03] 보안 점검 반영: 서버 로그 · 동시 저장 409 · 계산 서버 입력 거부 구분 (이우진 · feature/security-fix)
 - **작업 내용**: 서버 로그 추가(소득 저장 · 계산 요청/완료 · 걸린 시간 · predictionId · 감면 Y→N 전환 · 혜택 진단 결과 코드 · 400/404/401 경고) · 소득 첫 저장이 동시에 겹치면(UQ_INCOME_MEMBER_YEAR) 500 대신 409 `CONFLICT` · 계산 서버가 입력을 거부(400)하면 503 대신 400 `CALC_REJECTED` · 계산 서버 빈 응답 · 진단 결과 목록 없음 처리(감면 없이) · `IncomeRequestDTO` 모든 @NotNull · @Max에 한글 안내 문구
 - **변경 사유**: 보안약점 점검(행정안전부 「소프트웨어 개발보안 가이드」 7개 분류 · OWASP Top 10:2025 A09 · A10) — 정상 처리 로그가 없어 추적 불가(CWE-778) · 동시 요청 시 500(시간 및 상태) · Null Pointer 가능(코드오류) · 계산 서버 거부를 「연결 불가」로 안내(에러처리)
