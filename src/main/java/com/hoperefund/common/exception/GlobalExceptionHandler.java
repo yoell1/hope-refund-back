@@ -19,6 +19,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
  * @RestControllerAdvice: 모든 컨트롤러에서 던진 예외를 여기서 한 번에 받아요
  *
  * 보안: 오류 원인(스택 트레이스 · DB 주소 · SQL)은 서버 로그에만 남기고 응답에는 절대 넣지 않아요.
+ * 로그: 사용자 실수(400 · 404 등)는 warn, 서버 문제(500 · 503)는 error · 금액 · 생년월일 · 토큰 같은 입력값은 로그에 넣지 않아요.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler{
@@ -27,12 +28,14 @@ public class GlobalExceptionHandler{
 
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ErrorResponse> badRequest(BadRequestException e){
+        log.warn("잘못된 요청: {}", e.getMessage());
         return ResponseEntity.badRequest().body(new ErrorResponse("BAD_REQUEST", e.getMessage()));
     }
 
     /** 기준값이 없는 연도 (예: 2024): error 값을 "NO_CRITERIA"로 따로 보내요 (BadRequestException보다 먼저 잡혀요) */
     @ExceptionHandler(NoCriteriaException.class)
     public ResponseEntity<ErrorResponse> noCriteria(NoCriteriaException e){
+        log.warn("기준값이 없는 연도 요청");
         return ResponseEntity.badRequest().body(new ErrorResponse("NO_CRITERIA", e.getMessage()));
     }
 
@@ -44,8 +47,25 @@ public class GlobalExceptionHandler{
                 .body(new ErrorResponse("CALC_UNAVAILABLE", "계산 서버에 잠시 연결할 수 없어요. 잠시 후 다시 시도해 주세요"));
     }
 
+    /** 계산 서버가 입력값을 거부했을 때: 다시 시도해도 같으니 입력 확인 안내 (원인은 로그에만) */
+    @ExceptionHandler(CalcRejectedException.class)
+    public ResponseEntity<ErrorResponse> calcRejected(CalcRejectedException e){
+        log.warn("계산 서버가 입력값을 거부: {}", e.getMessage());
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse("CALC_REJECTED", "계산할 수 없는 입력값이 있어요. 소득 정보를 확인해 주세요"));
+    }
+
+    /** 같은 소득을 동시에 두 번 저장해 겹쳤을 때 (예: 저장 버튼 두 번 클릭) */
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> conflict(ConflictException e){
+        log.warn("동시 저장 충돌: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse("CONFLICT", "저장이 겹쳤어요. 잠시 후 다시 저장해 주세요"));
+    }
+
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponse> notFound(NotFoundException e){
+        log.warn("데이터 없음: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("NOT_FOUND", e.getMessage()));
     }
 
@@ -54,23 +74,27 @@ public class GlobalExceptionHandler{
     public ResponseEntity<ErrorResponse> invalid(MethodArgumentNotValidException e){
         FieldError first = e.getBindingResult().getFieldError();
         String message = first != null ? first.getDefaultMessage() : "입력값을 확인해 주세요";
+        log.warn("입력값 검사 실패: {}", first != null ? first.getField() : "-");  // 칸 이름만 (입력한 값은 남기지 않음)
         return ResponseEntity.badRequest().body(new ErrorResponse("VALIDATION", message));
     }
 
     /** JSON 형식이 틀렸을 때 (예: 숫자 칸에 글자) */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> unreadable(HttpMessageNotReadableException e){
+        log.warn("JSON 형식 오류");
         return ResponseEntity.badRequest().body(new ErrorResponse("VALIDATION", "입력 형식이 올바르지 않아요"));
     }
 
     /** 주소의 연도나 회원번호 헤더가 숫자가 아닐 때 (예: /api/incomes/abc) */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> typeMismatch(MethodArgumentTypeMismatchException e){
+        log.warn("요청 값 형식 오류: {}", e.getName());
         return ResponseEntity.badRequest().body(new ErrorResponse("VALIDATION", "요청 값 형식이 올바르지 않아요"));
     }
 
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<ErrorResponse> noMember(MissingRequestHeaderException e){
+        log.warn("회원 정보 없는 요청 (헤더 {} 없음)", e.getHeaderName());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("UNAUTHORIZED", "로그인이 필요해요"));
     }
 
