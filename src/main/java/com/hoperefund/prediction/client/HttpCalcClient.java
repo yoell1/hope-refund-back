@@ -1,5 +1,6 @@
 package com.hoperefund.prediction.client;
 
+import com.hoperefund.common.exception.CalcRejectedException;
 import com.hoperefund.common.exception.CalcUnavailableException;
 import com.hoperefund.common.exception.NoCriteriaException;
 import com.hoperefund.income.dto.IncomeResponseDTO;
@@ -25,7 +26,8 @@ import org.springframework.web.client.RestClientException;
  * 파이썬 계산 서버를 HTTP로 불러요 (hope.calc.mode=http 일 때만 Bean 등록)
  * - POST {CALC_URL}/calculate · /benefit (JSON 이름은 camelCase · 「동석님 전달」과 같음)
  * - 헤더 X-Calc-Token: 계산 서버의 CALC_API_TOKEN과 같은 값 (.env)
- * - 계산 서버가 NO_CRITERIA를 주면 그대로 NO_CRITERIA, 연결이 안 되면 503 안내
+ * - 계산 서버가 NO_CRITERIA를 주면 그대로 NO_CRITERIA · 입력값을 거부(400)하면 CALC_REJECTED
+ * - 토큰이 틀렸거나(401) 연결이 안 되거나 빈 응답이면 503 안내 (설정 · 서버 문제라 원인은 로그에만)
  */
 @Component
 @ConditionalOnProperty(name = "hope.calc.mode", havingValue = "http")
@@ -86,8 +88,9 @@ public class HttpCalcClient implements CalcClient{
     }
 
     private <T> T post(String path, Map<String, Object> body, Class<T> type){
+        T result;
         try{
-            return restClient.post()
+            result = restClient.post()
                     .uri(path)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(body)
@@ -97,9 +100,17 @@ public class HttpCalcClient implements CalcClient{
             if(e.getResponseBodyAsString().contains("\"NO_CRITERIA\"")){
                 throw new NoCriteriaException();
             }
-            throw new CalcUnavailableException("계산 서버 요청 오류: " + e.getStatusCode(), e);
+            if(e.getStatusCode().value() == 400){
+                throw new CalcRejectedException("계산 서버 입력 거부 " + path, e);
+            }
+            // 401(토큰 불일치) 등: 사용자가 고칠 수 없는 설정 문제 → 503
+            throw new CalcUnavailableException("계산 서버 요청 오류 " + path + ": " + e.getStatusCode(), e);
         }catch(RestClientException e){
-            throw new CalcUnavailableException("계산 서버 연결 실패", e);
+            throw new CalcUnavailableException("계산 서버 연결 실패 " + path, e);
         }
+        if(result == null){
+            throw new CalcUnavailableException("계산 서버 빈 응답 " + path, null);
+        }
+        return result;
     }
 }

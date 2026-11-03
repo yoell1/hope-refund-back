@@ -293,6 +293,27 @@ class CalculationServiceTest{
     }
 
     @Test
+    void 진단_결과가_비어_있으면_감면_없이_계산한다(){
+        // Given: 계산 서버가 진단 결과 목록 없이 응답
+        saveIncome(1L, 2026);
+        incomeMapper.rows.get("1-2026").setSmeReductionYn("Y");
+        predictionMapper.homeless.put(1L, "N");
+        predictionMapper.qualification = new MemberQualificationDTO();
+        SmeCalcClient client = new SmeCalcClient(true){
+            @Override
+            public BenefitResponseDTO diagnose(int taxYear, long totalSalary, MemberQualificationDTO member){
+                BenefitResponseDTO empty = new BenefitResponseDTO();
+                empty.setResults(null);
+                return empty;
+            }
+        };
+        // When
+        service(client, false, "http").calculate(1L, 2026);
+        // Then
+        assertEquals("N", client.sentSmeReductionYn);
+    }
+
+    @Test
     void 감면을_신청해도_정보가_부족하면_감면_없이_계산한다(){
         assertEquals("N", calculateWithSme(null).sentSmeReductionYn);
     }

@@ -7,6 +7,8 @@ import com.hoperefund.prediction.client.CalcClient;
 import com.hoperefund.prediction.dto.BenefitResponseDTO;
 import com.hoperefund.prediction.dto.MemberQualificationDTO;
 import com.hoperefund.prediction.mapper.PredictionMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,6 +18,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class BenefitService{
+
+    private static final Logger log = LoggerFactory.getLogger(BenefitService.class);
 
     private final IncomeService incomeService;
     private final CalcClient calcClient;
@@ -33,6 +37,11 @@ public class BenefitService{
         if(member == null){
             throw new NotFoundException("회원 정보를 찾을 수 없어요");
         }
-        return calcClient.diagnose(taxYear, income.getTotalSalary(), member);
+        BenefitResponseDTO result = calcClient.diagnose(taxYear, income.getTotalSalary(), member);
+        // 혜택 코드와 판정만 남겨요 (생년월일 · 입사일 같은 자격 정보는 남기지 않음)
+        log.info("혜택 진단 member={} year={} results={}", memberId, taxYear,
+                result.getResults() == null ? "-" : result.getResults().stream()
+                        .map(r -> r.getBenefitCode() + "=" + r.getEligible()).toList());
+        return result;
     }
 }
