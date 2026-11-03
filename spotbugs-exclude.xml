@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs 제외 목록 (판정이 끝난 오탐만 · 11/03 이우진)
+  원칙: 구조상 계속 나오는 오탐만 좁게 뺀다. 메서드 단위로 넓게 빼지 않는다
+        (나중에 같은 메서드에 진짜 문제가 생겨도 놓치지 않게).
+  남겨 둔 경고:
+    - CRLF_INJECTION_LOGS: 로그 값이 숫자 · 고정 문구 · 칸 이름뿐이라 오탐이지만,
+      나중에 사용자 입력을 로그로 찍는 코드가 생기면 잡아야 해서 남김
+    - SPRING_ENDPOINT: X-Member-Id → Spring Security 교체 전까지 「권한 검사 필요」 표시로 남김
+-->
+<FindBugsFilter>
+
+    <!--
+      EI_EXPOSE_REP · EI_EXPOSE_REP2 (CWE-374) · DTO
+      요청 · 응답 JSON을 담는 객체라 목록(List)을 getter · setter로 그대로 주고받는 게 정상 (Jackson 변환)
+    -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+        <Package name="~com\.hoperefund\..*\.dto"/>
+    </Match>
+
+    <!--
+      EI_EXPOSE_REP2 · 서비스 생성자
+      Spring이 넣어 주는 매퍼 · 서비스(의존성 주입)를 필드에 저장하는 것 → 외부에서 바꿀 수 있는 값이 아님
+    -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Class name="~com\.hoperefund\..*\.service\..*Service"/>
+        <Method name="&lt;init&gt;"/>
+    </Match>
+
+</FindBugsFilter>

@@ -115,6 +115,7 @@
 							<threshold>Low</threshold>    <!-- 낮은 심각도까지 모두 보기 -->
 							<xmlOutput>true</xmlOutput>
 							<failOnError>false</failOnError>  <!-- 경고가 있어도 빌드는 멈추지 않음 (결과를 보고 판정) -->
+							<excludeFilterFile>${project.basedir}/spotbugs-exclude.xml</excludeFilterFile>  <!-- 판정이 끝난 오탐만 제외 (이유는 파일 안에) -->
 							<plugins>
 								<!-- Find Security Bugs: 보안약점 전용 규칙 (SQL 삽입 · 하드코드 비밀번호 · 약한 암호화 등) -->
 								<plugin>
